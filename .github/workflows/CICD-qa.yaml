@@ -17,12 +17,16 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+
     defaults:
       run:
         shell: bash
+
     steps:      
-    - id: scripter
-      name: Dcript
+      - name: checkout
+        uses: actions/checkout@v4
+      
+      - name: Script
         working-directory: './'
         if: github.ref == 'refs/heads/qa' && github.event_name == 'push'
         run: |-
