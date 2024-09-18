@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "dev" ]
     paths:
-      - 'src/**'
+      - '/**'
       - '.github/workflows/CICD-dev.yml'
 
 jobs:
@@ -17,12 +17,16 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+
     defaults:
       run:
         shell: bash
+
     steps:      
-    - id: scripter
-      name: Dcript
+      - name: checkout
+        uses: actions/checkout@v4
+      
+      - name: Script
         working-directory: './'
         if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
         run: |-
