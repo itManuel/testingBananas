@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "dev" ]
     paths:
-      - '/**'
+      - '**'
       - '.github/workflows/CICD-dev.yml'
 
 jobs:
