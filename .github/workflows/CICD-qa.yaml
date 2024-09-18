@@ -1,11 +1,13 @@
+
 name: CICD-qa
 
 on:
   push:
     branches: [ "main" ]
-    paths:
-      - '/**'
-      - '.github/workflows/CICD-qa.yml'
+  pull_request:
+    branches: [ "main" ]
+
+  workflow_dispatch:
 
 jobs:
   setup-build-publish-deploy:
@@ -30,6 +32,6 @@ jobs:
         working-directory: './'
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |-
-          echo ${{ env.VARIABLE }}
+          echo ${{ vars.VARIABLE }}
           
           
