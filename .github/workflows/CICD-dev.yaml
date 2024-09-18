@@ -30,6 +30,6 @@ jobs:
         working-directory: './'
         if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
         run: |-
-          echo ${{ env.VARIABLE }}
+          echo ${{ vars.VARIABLE }}
           
           
