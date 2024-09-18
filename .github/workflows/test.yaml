@@ -18,7 +18,6 @@ jobs:
           fi
 
 
-on:
-  release:
-    types: [published]
-
+#on:
+#  release:
+#    types: [published]

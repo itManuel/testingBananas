@@ -28,7 +28,7 @@ jobs:
       
       - name: Script
         working-directory: './'
-        if: github.ref == 'refs/heads/qa' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |-
           echo ${{ env.VARIABLE }}
           
