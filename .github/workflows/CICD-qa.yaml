@@ -1,0 +1,31 @@
+name: CICD-qa
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'src/**'
+      - '.github/workflows/CICD-qa.yml'
+
+jobs:
+  setup-build-publish-deploy:
+    name: Setup, Build, Publish, and Deploy
+    runs-on: ubuntu-latest
+    environment: qa
+    permissions:
+      id-token: write
+      contents: write
+      issues: write
+      pull-requests: write
+    defaults:
+      run:
+        shell: bash
+    steps:      
+    - id: scripter
+      name: Dcript
+        working-directory: './'
+        if: github.ref == 'refs/heads/qa' && github.event_name == 'push'
+        run: |-
+          echo ${{ env.VARIABLE }}
+          
+          

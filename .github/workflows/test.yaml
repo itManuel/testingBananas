@@ -17,18 +17,7 @@ jobs:
             exit 1
           fi
 
-on:
-  push:
-    branches: [ "dev" ]
-    paths:
-      - 'src/**'
-      - '.github/workflows/CICD-dev.yml'
-on:
-  push:
-    branches: [ "main" ]
-    paths:
-      - 'src/**'
-      - '.github/workflows/CICD-qa.yml'
+
 on:
   release:
     types: [published]
