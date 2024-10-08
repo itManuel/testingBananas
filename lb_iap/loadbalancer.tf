@@ -1,12 +1,3 @@
-provider "google" {
-  project = var.project_id
-}
-
-resource "google_project" "my_project" {
-  name            = var.project_id
-  project_id      = var.project_id
-  billing_account = var.billing_account
-}
 
 #Enable APIs in the project
 resource "google_project_service" "project_services" {
@@ -176,6 +167,7 @@ data "google_iam_policy" "iap" {
     members = [
       "group:everyone@google.com", // a google group
       // "allAuthenticatedUsers" // anyone with a Google account (not recommended)
+      "user:roger123@gmail.com",       // a particular user
     ]
   }
 }
