@@ -19,26 +19,6 @@ resource "google_project_service" "project_services" {
     "monitoring.googleapis.com",
     "networkservices.googleapis.com",
     "run.googleapis.com",
-    //    "aiplatform.googleapis.com",
-    //    "artifactregistry.googleapis.com",
-    // "certificatemanager.googleapis.com",
-    //    "cloudtrace.googleapis.com",
-    // "container.googleapis.com",
-    // "containerscanning.googleapis.com",
-    //    "dataflow.googleapis.com",
-    //    "dataproc.googleapis.com",
-
-    //    "edgecache.googleapis.com",
-    // "firestore.googleapis.com",
-    //    "livestream.googleapis.com",
-    //    "redis.googleapis.com",
-
-    //    "secretmanager.googleapis.com",
-    //    "speech.googleapis.com",
-    //    "transcoder.googleapis.com",
-    //    "videointelligence.googleapis.com",
-    //    "vpcaccess.googleapis.com",
-    //    "workflows.googleapis.com"
   ])
   service                    = each.key
   disable_dependent_services = false
@@ -92,8 +72,6 @@ resource "google_cloud_run_service_iam_policy" "noauth" {
   policy_data = data.google_iam_policy.noauth.policy_data
 }
 
-
-
 // reserve a global ip
 resource "google_compute_global_address" "default" {
   name       = "${var.environment}-address"
@@ -112,17 +90,6 @@ resource "google_compute_managed_ssl_certificate" "default" {
     domains = [var.domain]
   }
 }
-
-/*
-resource "google_identity_platform_oauth_idp_config" "oauth_idp_config" {
-  name          = "oidc.oauth-idp-config"
-  display_name  = "Display Name"
-  client_id     = "client-id"
-  issuer        = "issuer"
-  enabled       = true
-  client_secret = "secret"
-}
-*/
 
 // default backend service (cloudrun_front)
 resource "google_compute_backend_service" "frontend" {
@@ -202,49 +169,6 @@ resource "google_compute_global_forwarding_rule" "https_redirect" {
   ip_address = google_compute_global_address.default.address
 }
 
-variable "environment" {
-  type        = string
-  description = "environment value"
-}
-
-variable "domain" {
-  type        = string
-  description = "load balancer domain"
-}
-
-variable "region" {
-  type        = string
-  description = "region"
-}
-
-variable "project_id" {
-  type        = string
-  description = "project id"
-}
-
-variable "dnsname" {
-  type = string
-}
-variable "dns_name" {
-  type = string
-}
-
-variable "dns_description" {
-  type = string
-}
-
-variable "billing_account" {
-  type = string
-}
-
-variable    oauth2_client_id {
-  type = string
-  sensitive = true
-}  
-variable    oauth2_client_secret{
-  type = string
-  sensitive = true
-}
 
 data "google_iam_policy" "iap" {
   binding {
@@ -265,21 +189,3 @@ resource "google_iap_web_backend_service_iam_policy" "policy" {
   ]
 }
 
-
-//DNS
-resource "google_dns_managed_zone" "gcpsandbox" {
-  depends_on  = [google_project_service.project_services]
-  project     = var.project_id
-  name        = var.dnsname
-  dns_name    = var.dns_name
-  description = var.dns_description
-}
-
-resource "google_dns_record_set" "ricardito_gcpsandbox" {
-  project      = var.project_id
-  name         = google_dns_managed_zone.gcpsandbox.dns_name
-  type         = "A"
-  ttl          = 300
-  managed_zone = google_dns_managed_zone.gcpsandbox.name
-  rrdatas      = [google_compute_global_address.default.address]
-}
