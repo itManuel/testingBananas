@@ -133,6 +133,12 @@ resource "google_compute_backend_service" "frontend" {
   port_name   = "http"
   timeout_sec = 30
 
+  iap {
+    enabled              = true
+    oauth2_client_id     = var.oauth2_client_id
+    oauth2_client_secret = var.oauth2_client_secret
+  }
+
   backend {
     group = google_compute_region_network_endpoint_group.cloudrun_front.id
   }
@@ -231,13 +237,21 @@ variable "billing_account" {
   type = string
 }
 
+variable    oauth2_client_id {
+  type = string
+  sensitive = true
+}  
+variable    oauth2_client_secret{
+  type = string
+  sensitive = true
+}
+
 data "google_iam_policy" "iap" {
   binding {
     role = "roles/iap.httpsResourceAccessor"
     members = [
-      // "group:everyone@google.com", // a google group
-      "allAuthenticatedUsers" // anyone with a Google account (not recommended)
-      //"user:john@google.com", // a particular user
+      "group:everyone@google.com", // a google group
+      // "allAuthenticatedUsers" // anyone with a Google account (not recommended)
     ]
   }
 }
