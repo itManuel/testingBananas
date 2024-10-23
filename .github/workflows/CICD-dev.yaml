@@ -4,8 +4,13 @@ on:
   push:
     branches: [ "dev" ]
     paths:
-      - '**'
+      - 'app/**'
       - '.github/workflows/CICD-dev.yml'
+  pull_request:
+    branches: ["dev"]
+    paths:
+      - 'app/**'
+      - '.github/workflows/CICD-dev.yaml'
 
   workflow_dispatch:
 
@@ -33,5 +38,46 @@ jobs:
         if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
         run: |-
           echo ${{ vars.VARIABLE }}
-          
+
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          workload_identity_provider: ${{ secrets.WORKLOAD_ID_PROVIDER }}
+          service_account: ${{ secrets.SERVICE_ACCOUNT }}
+
+      - id: 'build'
+        name: 'Build Server Container'
+        working-directory: './'
+        run: |-
+          docker build --tag "gcr.io/$GCP_PROJECT/${{ vars.APP_NAME }}:$GITHUB_SHA" .
+
+      - id: 'push'
+        name: 'Push and tag Container'
+        working-directory: './'
+        if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
+        run: |-
+          gcloud auth configure-docker gcr.io
+          docker push "gcr.io/$GCP_PROJECT/${{ vars.APP_NAME }}:$GITHUB_SHA"
+          docker tag "gcr.io/$GCP_PROJECT/${{ vars.APP_NAME }}:$GITHUB_SHA" \
+          "gcr.io/$GCP_PROJECT/${{ vars.APP_NAME }}:latest"
+          docker push "gcr.io/$GCP_PROJECT/t${{ vars.APP_NAME }}:latest"
+
+      - name: Deploy2
+        working-directory: './'
+        if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
+        run: |-
+          gcloud run deploy ${{ vars.APP_NAME }} \
+            --image "gcr.io/${GCP_PROJECT}/${{ vars.APP_NAME }}:$GITHUB_SHA" \
+            --service-account "${{ vars.APP_NAME }}-sa@$GCP_PROJECT.iam.gserviceaccount.com" \
+            --platform managed \
+            --allow-unauthenticated \
+            --timeout=3600s \
+            --cpu=2 \
+            --memory=1Gi \
+            --region us-central1 \
+            --min-instances 1 \
+            --max-instances 100 \
+            --ingress internal-and-cloud-load-balancing \
+
           
