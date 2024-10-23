@@ -1,4 +1,4 @@
-name: CICD-dev
+name: iac-dev
 
 on:
   push:
