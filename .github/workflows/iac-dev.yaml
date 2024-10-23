@@ -1,0 +1,109 @@
+name: CICD-dev
+
+on:
+  push:
+    branches: [ "dev" ]
+    paths:
+      - 'infra/**'
+      - '.github/workflows/iac-dev.yml'
+  pull_request:
+    branches: [ "dev" ]
+    paths:
+      - 'infra/**'
+      - '.github/workflows/iac-dev.yml'
+
+  workflow_dispatch:
+
+jobs:
+  setup-build-plan-apply:
+    name: Setup, Plan, Apply
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      id-token: write
+      contents: write
+      issues: write
+      pull-requests: write
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:      
+      - name: checkout
+        uses: actions/checkout@v4
+      
+      - name: Script
+        working-directory: './'
+        if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
+        run: |-
+          echo ${{ vars.VARIABLE }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          workload_identity_provider: ${{ secrets.WORKLOAD_ID_PROVIDER }}
+          service_account: ${{ secrets.SERVICE_ACCOUNT }}
+  
+      - name: Terraform variables
+        id: tfvars
+        working-directory: dev/
+        run: |-
+          cat > pipeline.auto.tfvars <<EOF
+          project_id = "${{ env.GCP_PROJECT }}"
+          terraform_sa = "${{ secrets.SERVICE_ACCOUNT }}"
+          environment = "dev"
+          EOF
+  
+      - name: Terraform Init
+        id: init
+        working-directory: dev/
+        run: terraform init
+  
+      # Generates an execution plan for
+      - name: Terraform Plan
+        id: plan
+        working-directory: dev/
+        if: github.event_name == 'pull_request'
+        run: terraform plan -out terraform.plan
+        continue-on-error: true
+  
+      # generate plain output
+      - run: terraform show -no-color terraform.plan > terraform.text
+        working-directory: dev/
+        if: github.event_name == 'pull_request'
+  
+      # generate json output
+      - run: terraform show -json terraform.plan > tf-temp.json
+        working-directory: dev/
+        if: github.event_name == 'pull_request'
+  
+      - run: if [ "$(jq '.resource_changes' tf-temp.json)" == "null" ]; then echo "resource_changes is null" && jq --argjson to_add '{"resource_changes":[]}' '. * $to_add' tf-temp.json > terraform.json; else echo "resource_changes is not null" && cp tf-temp.json terraform.json; fi
+        working-directory: dev/
+        if: github.event_name == 'pull_request'
+  
+      - uses: ahmadnassri/action-terraform-report@v4
+        if: github.event_name == 'pull_request'
+        with:
+          # tell the action the plan outputs
+          terraform-text: dev/terraform.text
+          terraform-json: dev/terraform.json
+          remove-stale-reports: true
+          custom-header: ":robot: Terraform Report DEV"
+  
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+  
+      - name: Terraform Apply
+        working-directory: dev/
+        if: github.ref == 'refs/heads/development' && github.event_name == 'push'
+        run: terraform apply -auto-approve
+            
+            
