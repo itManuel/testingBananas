@@ -34,7 +34,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Script
-        working-directory: './'
+        working-directory: './app'
         if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
         run: |-
           echo ${{ vars.VARIABLE }}
@@ -48,13 +48,13 @@ jobs:
 
       - id: 'build'
         name: 'Build Server Container'
-        working-directory: './'
+        working-directory: './app'
         run: |-
           docker build --tag "gcr.io/$GCP_PROJECT/${{ vars.APP_NAME }}:$GITHUB_SHA" .
 
       - id: 'push'
         name: 'Push and tag Container'
-        working-directory: './'
+        working-directory: './app'
         if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
         run: |-
           gcloud auth configure-docker gcr.io
@@ -64,7 +64,7 @@ jobs:
           docker push "gcr.io/$GCP_PROJECT/t${{ vars.APP_NAME }}:latest"
 
       - name: Deploy2
-        working-directory: './'
+        working-directory: './app'
         if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
         run: |-
           gcloud run deploy ${{ vars.APP_NAME }} \
